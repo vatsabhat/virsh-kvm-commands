@@ -1,0 +1,60 @@
+========================================================================================================================
+                              VIRSH / VIRT-INSTALL: DEPLOYING NEW VIRTUAL MACHINES
+========================================================================================================================
+
+SCENARIO 1: SILENT / UNATTENDED INSTALLATION FROM ISO
+------------------------------------------------------------------------------------------------------------------------
+To perform a completely silent installation, we use `virt-install` with an answer file (like a Kickstart file for 
+RedHat/CentOS/Rocky or a Preseed file for Debian/Ubuntu).
+
+Command  | virt-install \
+         |   --name production-vm \
+         |   --vcpus 2 \
+         |   --ram 2048 \
+         |   --location /var/lib/libvirt/images/Rocky-9-minimal.iso \
+         |   --disk size=20,pool=default,format=qcow2 \
+         |   --network network=default,model=virtio \
+         |   --graphics none \
+         |   --console pty,target_type=serial \
+         |   --extra-args "inst.ks=http://192.168.122 console=ttyS0,115200n8" \
+         |   --noautoconsole
+         |
+Fields   | --location    : Replaces --cdrom. Required so libvirt can inject kernel extra-args.
+         | --graphics none: Disables VNC/SPICE graphical displays.
+         | --extra-args  : Feeds the automation script URL (inst.ks) and redirects output to the serial console.
+         | --noautoconsole: Returns control back to your terminal host immediately while installation runs silently.
+
+------------------------------------------------------------------------------------------------------------------------
+SCENARIO 2: CREATING A VM USING AN EXISTING QCOW2 DISK IMAGE
+------------------------------------------------------------------------------------------------------------------------
+Use this method when you already have a pre-configured or cloud-init image (like an Ubuntu Cloud Image) and want to spin 
+up a VM instantly without going through an installation setup wizard.
+
+Step 1   | Copy your existing qcow2 template to the libvirt storage directory:
+         | cp /tmp/template.qcow2 /var/lib/libvirt/images/cloned-vm.qcow2
+         |
+Step 2   | Provision the VM using the copied disk as the primary storage layout:
+         | virt-install \
+         |   --name app-server-vm \
+         |   --vcpus 2 \
+         |   --ram 4096 \
+         |   --disk path=/var/lib/libvirt/images/cloned-vm.qcow2,format=qcow2,bus=virtio \
+         |   --network network=default,model=virtio \
+         |   --os-variant ubuntu22.04 \
+         |   --import \
+         |   --noautoconsole
+         |
+Fields   | --disk path=  : Points directly to your existing, copied qcow2 image.
+         | --os-variant  : Optimizes CPU/kernel settings for the specified OS profile.
+         | --import      : Tells libvirt to skip any OS installation process and boot straight from the disk.
+
+------------------------------------------------------------------------------------------------------------------------
+POST-DEPLOYMENT MANAGEMENT COMMANDS
+------------------------------------------------------------------------------------------------------------------------
+Action                   | Command
+-------------------------+----------------------------------------------------------------------------------------------
+View installation status | virsh list --all
+Connect to text console  | virsh console production-vm  (Press Ctrl + ] to exit the console)
+Force stop the VM        | virsh destroy production-vm
+Completely delete VM     | virsh undefine app-server-vm --remove-all-storage
+========================================================================================================================
