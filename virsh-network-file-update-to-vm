@@ -1,0 +1,60 @@
+========================================================================================================================
+                              CREATING A NEW NETWORK XML FILE & ATTACHING IT TO A VM
+========================================================================================================================
+
+PHASE 1: CREATING AND ACTIVATING THE NEW ISOLATED NETWORK XML
+------------------------------------------------------------------------------------------------------------------------
+Step 1   | Create a new file named /tmp/custom-net.xml using a text editor, and copy the following network template:
+         |
+         | <network>
+         |   <name>custom-isolated-net</name>
+         |   <bridge name='virbr9' stp='on' delay='0'/>
+         |   <domain name='custom.local'/>
+         |   <ip address='192.168.150.1' netmask='255.255.255.0'>
+         |     <dhcp>
+         |       <range start='192.168.150.10' end='192.168.150.100'/>
+         |     </dhcp>
+         |   </ip>
+         | </network>
+         |
+Step 2   | Register and permanently define the network configuration:
+         | virsh net-define /tmp/custom-net.xml
+         |
+Step 3   | Start the network to create the live Linux network bridge interface:
+         | virsh net-start custom-isolated-net
+         |
+Step 4   | Set the network to start automatically when the host server boots up:
+         | virsh net-autostart custom-isolated-net
+         |
+Step 5   | Verify the network state is "active" and autostart is marked "yes":
+         | virsh net-list --all
+
+------------------------------------------------------------------------------------------------------------------------
+PHASE 2: ATTACHING THE NEW NETWORK INTERFACE TO A SPECIFIC VM
+------------------------------------------------------------------------------------------------------------------------
+Use this method to inject the new network layout live into an active VM and commit it to the configuration registry.
+
+Command  | virsh attach-interface --domain my-vm \
+         |                        --type network \
+         |                        --source custom-isolated-net \
+         |                        --model virtio \
+         |                        --live \
+         |                        --config
+         |
+Fields   | --domain  : The exact name of your targeted virtual machine (e.g., my-vm).
+         | --type    : Specifying "network" maps it directly to a virsh-defined pool.
+         | --source  : The exact network name declared in the XML (`custom-isolated-net`).
+         | --model   : "virtio" is used for high-performance paravirtualized network drivers.
+         | --live    : Hot-plugs the network interface card immediately into the running VM.
+         | --config  : Saves the hardware entry permanently to the VM's operational XML manifest.
+
+------------------------------------------------------------------------------------------------------------------------
+PHASE 3: POST-ATTACHMENT VERIFICATION WORKFLOW
+------------------------------------------------------------------------------------------------------------------------
+Step 1   | List all network interfaces assigned to the target VM to verify the placement:
+         | virsh domiflist my-vm
+         | Expected output will show "custom-isolated-net" with a newly assigned MAC address.
+         |
+Step 2   | (Optional) Retrieve the dynamic IP address the VM claims from the new network pool:
+         | virsh net-dhcp-leases custom-isolated-net
+========================================================================================================================
