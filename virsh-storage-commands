@@ -1,0 +1,28 @@
+========================================================================================================================
+                                       VIRSH STORAGE COMMANDS REFERENCE MANUAL
+========================================================================================================================
+
+COMMAND         | DESCRIPTION                                           | PRACTICAL EXAMPLE
+----------------+-------------------------------------------------------+-----------------------------------------------
+pool-list       | Lists active and/or inactive storage pools.          | virsh pool-list --all
+pool-define-as  | Configures a persistent pool using command arguments. | virsh pool-define-as local-dir dir --target /data/storage
+pool-build      | Prepares the underlying storage source (e.g. format). | virsh pool-build local-dir
+pool-start      | Activates an inactive predefined storage pool.       | virsh pool-start local-dir
+pool-destroy    | Force-stops an active storage pool immediately.       | virsh pool-destroy local-dir
+pool-undefine   | Deletes the configuration of an inactive pool.       | virsh pool-undefine local-dir
+pool-delete     | Deletes the actual underlying storage directory/disk. | virsh pool-delete local-dir
+pool-dumpxml    | Exports pool configuration to standard XML output.    | virsh pool-dumpxml local-dir > pool_backup.xml
+pool-edit       | Opens pool XML configuration in default text editor.  | virsh pool-edit local-dir
+pool-autostart  | Configures a pool to start automatically at boot.     | virsh pool-autostart local-dir
+pool-info       | Displays pool state, capacity, allocation, available.| virsh pool-info local-dir
+pool-refresh    | Refreshes and updates the list of volumes in a pool.  | virsh pool-refresh local-dir
+----------------+-------------------------------------------------------+-----------------------------------------------
+vol-list        | Lists all storage volumes within a specific pool.    | virsh vol-list local-dir
+vol-create-as   | Creates a new virtual disk volume inside a pool.      | virsh vol-create-as local-dir web_disk.qcow2 20G --format qcow2
+vol-clone       | Clones an existing storage volume into a new one.     | virsh vol-clone --pool local-dir ubuntu.qcow2 new_vm.qcow2
+vol-delete      | Deletes a specific storage volume from a pool.        | virsh vol-delete --pool local-dir web_disk.qcow2
+vol-resize      | Expands or shrinks the capacity of a storage volume.   | virsh vol-resize --pool local-dir web_disk.qcow2 30G
+vol-info        | Displays volume type, capacity, and allocation details| virsh vol-info --pool local-dir web_disk.qcow2
+vol-path        | Returns the absolute OS path of a storage volume.     | virsh vol-path --pool local-dir web_disk.qcow2
+vol-dumpxml     | Exports volume configuration details to XML format.   | virsh vol-dumpxml --pool local-dir web_disk.qcow2
+========================================================================================================================
