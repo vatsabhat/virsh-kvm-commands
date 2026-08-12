@@ -1,0 +1,41 @@
+========================================================================================================================
+                                     ATTACHING THE NEW BRIDGE TO A SPECIFIC VM
+========================================================================================================================
+
+METHOD 1: LIVE & PERMANENT ATTACHMENT (RECOMMENDED)
+------------------------------------------------------------------------------------------------------------------------
+Use this command to attach the network interface to a running VM immediately and ensure it persists after a reboot.
+
+Command  | virsh attach-interface --domain my-vm --type network --source default --model virtio --live --config
+         |
+Fields   | --domain  : The name of your virtual machine (e.g., my-vm).
+         | --type    : The type of connection interface (network).
+         | --source  : The name of the virsh network (e.g., default).
+         | --model   : The driver model (virtio delivers the best performance).
+         | --live    : Injects the interface into the running VM without a reboot.
+         | --config  : Saves the change permanently to the VM's XML configuration.
+
+------------------------------------------------------------------------------------------------------------------------
+METHOD 2: EDITING THE VM CONFIGURATION MANUALLY
+------------------------------------------------------------------------------------------------------------------------
+If you prefer managing configurations manually, update the VM's XML file directly.
+
+Step 1   | Open the VM configuration:
+         | virsh edit my-vm
+         |
+Step 2   | Find the <devices> section and paste the following block inside it:
+         | 
+         | <interface type='network'>
+         |   <source network='default'/>
+         |   <model type='virtio'/>
+         | </interface>
+         |
+Step 3   | Save and close the editor. If the VM is running, restart it to apply:
+         | virsh reboot my-vm
+
+------------------------------------------------------------------------------------------------------------------------
+VERIFICATION
+------------------------------------------------------------------------------------------------------------------------
+Command  | Check the VM's active interfaces:
+         | virsh domiflist my-vm
+========================================================================================================================
