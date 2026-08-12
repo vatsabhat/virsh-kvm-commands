@@ -1,0 +1,43 @@
+========================================================================================================================
+                                     TROUBLESHOOTING VIRSH STORAGE POOLS & VOLUMES
+========================================================================================================================
+
+ERROR / SYMPTOM               | COMMON CAUSE                        | RESOLUTION STEPS & COMMANDS
+------------------------------+-------------------------------------+---------------------------------------------------
+"Storage pool not active"     | The pool is defined but stopped.    | 1. Start it:    virsh pool-start <pool-name>
+
+                              | Occurs frequently after host reboots| 2. Auto-start: virsh pool-autostart <pool-name>
+------------------------------+-------------------------------------+---------------------------------------------------
+"Permission denied" on disk   | SELinux / AppArmor is blocking access| 1. Check owner:  ls -la /path/to/storage/dir
+image or directory            | or directory ownership is incorrect.| 2. Set owner:   chown -R qemu:qemu /path/to/dir
+
+                              |                                     | 3. Fix SELinux: chcon -t svirt_image_t /path/file
+------------------------------+-------------------------------------+---------------------------------------------------
+"Volume not found" after      | A file was added/modified manually   | 1. Sync pool:   virsh pool-refresh <pool-name>
+manual file manipulation      | inside the storage directory path.  | 2. Check list:  virsh vol-list <pool-name>
+------------------------------+-------------------------------------+---------------------------------------------------
+"Device populated manually"   | For LVM pools: The source Volume    | 1. Check host:  vgdisplay <vg-name>
+or LVM activation failure     | Group is inactive or missing.       | 2. Activate VG: vgchange -ay <vg-name>
+
+                              |                                     | 3. Retry pool:  virsh pool-start <pool-name>
+------------------------------+-------------------------------------+---------------------------------------------------
+Disk resize does not show up  | The volume capacity expanded on the  | 1. Refresh:     virsh pool-refresh <pool-name>
+inside the guest OS           | host but the VM block layer missed it| 2. Live block:  virsh blockresize <vm> vda 50G
+========================================================================================================================
+
+========================================================================================================================
+                                      DIAGNOSTIC WORKFLOW & LOG ANALYSIS
+========================================================================================================================
+
+STEP 1: Check Global libvirt Logs
+Command  | tail -n 50 /var/log/libvirt/libvirtd.log
+         | (Or use journalctl -u libvirtd -n 50)
+
+STEP 2: Inspect Pool Settings & Capacity
+Command  | virsh pool-info <pool-name>
+Action   | Look at the "Available" section. Over-provisioning thin pools will cause VMs to freeze mid-operation.
+
+STEP 3: Dump XML to Check for Path Typographical Errors
+Command  | virsh pool-dumpxml <pool-name>
+Action   | Verify the <path> string matches the absolute system path exactly.
+========================================================================================================================
