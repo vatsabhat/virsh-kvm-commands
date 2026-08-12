@@ -1,0 +1,30 @@
+========================================================================================================================
+                                       TROUBLESHOOTING COMMON NETWORK STATES
+========================================================================================================================
+
+STATE / ISSUE                 | CAUSE / SYMPTOM                      | RESOLUTION COMMANDS
+------------------------------+--------------------------------------+--------------------------------------------------
+Network is inactive           | The network has stopped or was       | 1. Check state: virsh net-info default
+
+                              | never started. VMs cannot connect.   | 2. Start it:    virsh net-start default
+------------------------------+--------------------------------------+--------------------------------------------------
+Autostart is disabled         | Network stays down after a host      | 1. Enable it:   virsh net-autostart default
+
+                              | system reboot.                       | 2. Verify:      virsh net-list --all
+------------------------------+--------------------------------------+--------------------------------------------------
+Bridge interface missing      | The virtual bridge (e.g. virbr0) did | 1. Restart libvirtd service: 
+
+                              | not get created in the system kernel |    systemctl restart libvirtd
+                              | when the network started.            | 2. Re-trigger net: virsh net-destroy default &&
+                              |                                      |                    virsh net-start default
+------------------------------+--------------------------------------+--------------------------------------------------
+IP Address Conflict           | The IP range defined in the XML      | 1. Dump XML:    virsh net-dumpxml default
+
+                              | overlaps with an existing host route | 2. Check route: ip route show
+                              | or physical network.                 | 3. Fix range:   virsh net-edit default
+------------------------------+--------------------------------------+--------------------------------------------------
+DHCP Not Assigning IPs        | The dnsmasq process managed by       | 1. Kill stray dnsmasq: killall dnsmasq
+
+                              | libvirt is hung or conflicting with  | 2. Restart net: virsh net-destroy default &&
+                              | a system-wide dnsmasq instance.      |                 virsh net-start default
+========================================================================================================================
