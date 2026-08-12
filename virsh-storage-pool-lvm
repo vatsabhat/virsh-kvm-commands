@@ -1,0 +1,44 @@
+========================================================================================================================
+                               ATTACHING A VOLUME OR SETTING UP AN LVM STORAGE POOL
+========================================================================================================================
+
+OPTION 1: ATTACHING A NEWLY CREATED VOLUME TO A VM
+------------------------------------------------------------------------------------------------------------------------
+Use this method to safely expose a virtual disk volume (e.g., qcow2 or raw) to an active or offline VM.
+
+Step 1   | Find the absolute path of your storage volume:
+         | virsh vol-path --pool local-dir web_disk.qcow2
+         | Output Example: /data/storage/web_disk.qcow2
+         |
+Step 2   | Attach the disk live and permanently to the VM:
+         | virsh attach-disk --domain my-vm --source /data/storage/web_disk.qcow2 --target vdb --subdriver qcow2 --live --config
+         |
+Fields   | --domain    : Name of the VM (e.g., my-vm).
+         | --source    : The absolute path from Step 1.
+         | --target    : Device target visible inside the VM (vdb, vdc, etc.).
+         | --subdriver : Disk format type (qcow2 or raw).
+         | --live      : Attaches disk immediately to the running VM.
+         | --config    : Ensures the disk stays attached after reboots.
+
+------------------------------------------------------------------------------------------------------------------------
+OPTION 2: SETTING UP AN LVM-BASED STORAGE POOL
+------------------------------------------------------------------------------------------------------------------------
+LVM (Logical Volume Manager) pools provide excellent performance by using raw logical volumes instead of image files.
+
+Step 1   | Define the new LVM pool configuration:
+         | virsh pool-define-as lvm-pool logical --source-name vg_libvirt --target /dev/vg_libvirt
+         |
+         | Note: "vg_libvirt" must be an existing Volume Group on your Linux host system.
+         |
+Step 2   | Configure the pool to start automatically during system boot:
+         | virsh pool-autostart lvm-pool
+         |
+Step 3   | Start the storage pool to make it active:
+         | virsh pool-start lvm-pool
+         |
+Step 4   | Verify that libvirt can read the pool and see its total capacity:
+         | virsh pool-info lvm-pool
+         |
+Step 5   | (Optional) Create a new logical volume directly inside your new pool:
+         | virsh vol-create-as lvm-pool lvm_vm1_disk 50G
+========================================================================================================================
