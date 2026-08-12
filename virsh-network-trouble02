@@ -1,0 +1,20 @@
+========================================================================================================================
+                                     STEP-BY-STEP: CHANGING A NETWORK BRIDGE NAME
+========================================================================================================================
+
+STEP 1: Stop the active network
+Command  | virsh net-destroy default
+Note     | Replace "default" with your specific network name if different.
+
+STEP 2: Open the configuration file for editing
+Command  | virsh net-edit default
+Action   | Locate the <bridge name='virbr0'.../> tag.
+         | Change 'virbr0' to your new desired name (e.g., 'br-lan').
+         | Save and close the editor.
+
+STEP 3: Start the network to apply changes
+Command  | virsh net-start default
+
+STEP 4: Verify the bridge change on the host system
+Command  | ip link show dev br-lan
+========================================================================================================================
