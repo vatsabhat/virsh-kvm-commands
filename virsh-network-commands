@@ -1,0 +1,23 @@
+========================================================================================================================
+                                       VIRSH NETWORK COMMANDS REFERENCE MANUAL
+========================================================================================================================
+
+COMMAND         | DESCRIPTION                                           | PRACTICAL EXAMPLE
+----------------+-------------------------------------------------------+-----------------------------------------------
+net-list        | Lists active and/or inactive virtual networks.        | virsh net-list --all
+net-define      | Defines a persistent network from an XML file.        | virsh net-define /etc/libvirt/qemu/vnet0.xml
+net-create      | Creates and starts a transient network from XML.      | virsh net-create /tmp/temporary_net.xml
+net-start       | Starts an inactive, predefined virtual network.       | virsh net-start lab-network
+net-destroy     | Force-stops an active network immediately.            | virsh net-destroy default
+net-undefine    | Deletes the configuration of an inactive network.     | virsh net-undefine lab-network
+net-dumpxml     | Exports network configuration to standard XML output. | virsh net-dumpxml default > backup_net.xml
+net-edit        | Opens network XML configuration in default text editor| virsh net-edit default
+net-autostart   | Configures a network to start automatically at boot.  | virsh net-autostart default
+net-info        | Displays UUID, state, and persistent status.         | virsh net-info default
+net-dhcp-leases | Displays current DHCP leases assigned to virtual VMs. | virsh net-dhcp-leases default
+net-uuid        | Converts a network name into its unique UUID string.  | virsh net-uuid default
+net-name        | Converts a network UUID string back into its name.    | virsh net-name 5ef49a94-4b53-4bf8-b80c-7b8a8b
+net-update      | Modifies parts of an existing network XML live.       | virsh net-update default add ip-dhcp-host '<host mac="52:54:00:12:34:56" name="vm1" ip="192.168.122.50"/>' --live --config
+net-event       | Registers to listen for live virtual network events.  | virsh net-event --event lifecycle --loop
+
+========================================================================================================================
