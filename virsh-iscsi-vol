@@ -1,0 +1,68 @@
+========================================================================================================================
+                              CREATING AN iSCSI STORAGE POOL & ATTACHING LUNs TO A VM
+========================================================================================================================
+
+PHASE 1: CREATING AND ACTIVATING THE EXISTING iSCSI STORAGE POOL
+------------------------------------------------------------------------------------------------------------------------
+When you link libvirt to an existing iSCSI Target, libvirt logs into the portal and scans for available LUNs (Logical 
+Unit Numbers). Note that libvirt cannot create or delete volumes on a remote iSCSI target; it only maps existing LUNs.
+
+Step 1   | Define the persistent iSCSI storage pool layout:
+         | virsh pool-define-as --name iscsi-pool \
+         |                      --type iscsi \
+         |                      --source-host 192.168.100.20 \
+         |                      --source-path ://2026-08.com.example:storage.target1 \
+         |                      --target /dev/disk/by-path
+         |
+Fields   | --name        : The local unique identifier for your pool (iscsi-pool).
+         | --type        : The storage driver architecture (iscsi).
+         | --source-host : The IP address or FQDN of your existing iSCSI Target / SAN.
+         | --source-path : The target's IQN (iSCSI Qualified Name).
+         | --target      : The local directory on the KVM host where iSCSI block device links are exposed.
+         |
+Step 2   | Configure the pool to automatically log into the iSCSI portal at host system boot:
+         | virsh pool-autostart iscsi-pool
+         |
+Step 3   | Start the storage pool (this triggers the iSCSI initiator login sequence on the host):
+         | virsh pool-start iscsi-pool
+
+------------------------------------------------------------------------------------------------------------------------
+PHASE 2: IDENTIFYING THE STORAGE VOLUME (LUN)
+------------------------------------------------------------------------------------------------------------------------
+Step 1   | List all available iSCSI targets discovered inside the activated pool:
+         | virsh vol-list iscsi-pool
+         |
+         | Expected output snippet:
+         | Name               Path
+         | ----------------------------------------------------------------------------------------------------
+         | unit:0:0:1         /dev/disk/by-path/ip-192.168.100.20:3260-iscsi-://2026-08.com.example...lun-1
+         |
+Step 2   | Copy the exact absolute path returned under the "Path" field for the LUN you wish to attach.
+
+------------------------------------------------------------------------------------------------------------------------
+PHASE 3: ATTACHING THE iSCSI LUN DIRECTLY TO A SPECIFIC VM
+------------------------------------------------------------------------------------------------------------------------
+Use this command to hot-plug the raw block iSCSI LUN into an active VM. It passes through as a generic SCSI block device.
+
+Command  | virsh attach-disk --domain database-vm \
+         |                    --source /dev/disk/by-path/ip-192.168.100.20:3260-iscsi-://2026-08.com.example...lun-1 \
+         |                    --target vdc \
+         |                    --cache none \
+         |                    --live \
+         |                    --config
+         |
+Fields   | --domain  : The exact name of your targeted virtual machine (e.g., database-vm).
+         | --source  : The absolute device path retrieved from Phase 2, Step 1.
+         | --target  : Virtual disk device label exposed to the VM (vdc, vdd, etc.).
+         | --cache   : Set to "none" for shared/network clustering block layers to maintain consistency.
+         | --live    : Hot-plugs the storage layout immediately into the active operational workspace.
+         | --config  : Writes the change permanently to the VM's primary core configuration repository.
+
+------------------------------------------------------------------------------------------------------------------------
+VERIFICATION WORKFLOW
+------------------------------------------------------------------------------------------------------------------------
+Action                   | Command
+-------------------------+----------------------------------------------------------------------------------------------
+Verify target VM disks   | virsh domblklist database-vm
+Check target pool health | virsh pool-info iscsi-pool
+========================================================================================================================
